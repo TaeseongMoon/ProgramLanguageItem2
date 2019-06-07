@@ -1,0 +1,1 @@
+( define length ( lambda ( x ) ( cond ( ( null? nill? x ) 0 ) ( #T #F  ( + 1 ( length ( cdr x ) ) ) ) ) ) )
