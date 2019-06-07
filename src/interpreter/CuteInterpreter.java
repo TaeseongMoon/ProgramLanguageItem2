@@ -10,19 +10,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CuteInterpreter {
-	
-	static Map<String,Node> defineHash = new HashMap<String,Node>();
+	//hashmap으로 저장
+// 	static Map<Str ing,Node> defineHash = new HashMap<String,Node>();
 	
 	private void errorLog(String err) {
 		System.out.println(err);
 	 }
 	
 	 public Node runExpr(Node rootExpr) {
-		 
-		 Node n = lookupTable(rootExpr.toString());
-		 if(n != null) {
-			 rootExpr = n;
-		 }
+		 //먼저 table에 있는지 
+// 		 Node n = lookupTable(rootExpr.toString());
+// 		 if(n != null) {
+// 			 rootExpr = n;
+// 		 }
 		 
 		 if (rootExpr == null)
 			 return null;
@@ -242,25 +242,26 @@ public class CuteInterpreter {
 				}
 				break;
 		
-			case DEFINE:
+// 			case DEFINE:
+				//key값 뒤의 value
+// 				Node assignList = operand.cdr().car();
 				
-				Node assignList = operand.cdr().car();
-				
-				if(assignList instanceof ListNode) {
-					if(((ListNode) assignList).car() instanceof QuoteNode) {
-						defineHash.put(operand.car().toString(),assignList);
-					}
-					else {
-						Node n = runBinary((ListNode)assignList);
-					
-					
-					if (n instanceof IntNode || n instanceof BooleanNode) {
-						defineHash.put(operand.car().toString(), n);
-					}
-					}
-				}else {
-					defineHash.put(operand.car().toString(), operand.cdr().car());
-				}return null;
+// 				if(assignList instanceof ListNode) {
+// 				 	//List지만 quoteNode면 그냥저장 
+// 					if(((ListNode) assignList).car() instanceof QuoteNode) {
+// 						defineHash.put(operand.car().toString(),assignList);
+// 					}
+// 				 	//List안의 결과값을 계산해서 저장
+// 					else {
+// 						Node n = runBinary((ListNode)assignList);
+// 						if (n instanceof IntNode || n instanceof BooleanNode) {
+// 							defineHash.put(operand.car().toString(), n);
+// 						}
+// 					}
+// 				}//이외에는 다 
+// 				 else {
+// 					defineHash.put(operand.car().toString(), operand.cdr().car());
+// 				}return null;
 				
 			 default:
 				 break;	
@@ -364,17 +365,17 @@ public class CuteInterpreter {
 	 private Node runQuote(ListNode node) {
 		 return ((QuoteNode)node.car()).nodeInside();
 	 }
-	 
-	 private Node lookupTable(String id) {
-		 Node n = null;
-		 for(String key: defineHash.keySet()) {
-			 if(key.equals(id)) {
-				 n = defineHash.get(key);
-				 return n;
-			 }
-		 }
-		 return null;
-	 }
+	 //table에 define된 값이있는지 탐색해서 값을 반환해준다. 
+// 	 private Node lookupTable(String id) {
+// 		 Node n = null;
+// 		 for(String key: defineHash.keySet()) {
+// 			 if(key.equals(id)) {
+// 				 n = defineHash.get(key);
+// 				 return n;
+// 			 }
+// 		 }
+// 		 return null;
+// 	 }
 //	 private Node insertTable(String id, Node value) {
 //	 return 
 //	 }
