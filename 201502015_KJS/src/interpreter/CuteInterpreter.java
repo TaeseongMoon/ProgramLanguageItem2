@@ -239,6 +239,8 @@ public class CuteInterpreter {
                 // value에 해당되는 부분이 ListNode이면 runExpr를 한 결과를 반환합니다.
                 if(value instanceof ListNode )
                     value = runExpr(value);
+                else if(value instanceof IdNode ) // Id가 value값이면 테이블에서 가져온다.
+                    value = lookupTable(value.toString());
                 insertTable(variable.toString(), value);    // id = value 를 테이블에 넣습니다.
                 return  null;
             case LAMBDA:
