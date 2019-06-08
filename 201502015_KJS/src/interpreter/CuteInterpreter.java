@@ -151,8 +151,15 @@ public class CuteInterpreter {
             case EQ_Q:
                 // 두 노드의 값이 같은지 확인한다.
                 //List안의 값이 같아도 다른 객체를 참조하므로 F를 출력한다.
-                Node firstNode = runQuote((ListNode)operand.car());
-                Node secondNode = runQuote((ListNode)operand.cdr().car());
+                Node firstNode = operand.car();
+                Node secondNode = operand.cdr().car();
+                // 먼저 Table에 define되있는지 확인한다.
+                if(firstNode instanceof IdNode)
+                    firstNode = lookupTable(firstNode.toString());
+                if(secondNode instanceof IdNode)
+                    secondNode = lookupTable(secondNode.toString());
+                firstNode = runQuote((ListNode)firstNode);
+                secondNode = runQuote((ListNode)secondNode);
 
                 if(firstNode.equals(secondNode))
                     return BooleanNode.TRUE_NODE;
