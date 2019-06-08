@@ -81,18 +81,12 @@ public class CuteInterpreter {
                 else if(operand.car() instanceof QuoteNode ) {
                     listnode = (ListNode) runQuote(operand);    // Quote를 때어내 ListNode를 가져온다.
                     // ( car ' ( cdr ' ( 1 2 3 ) ) ) = cdr
-                    if(operand.car instanceof FunctionNode) {
-                        return listnode.car();
-                    }
-                    else{
-                    headItem = listnode.car();    // 가져온 ListNode에서 첫번째 원소를 가져와 반환한다.
-                    }
+                    headItem = listnode.car();    // 가져온 ListNode에서 첫번째 원소를 가져와 반환한다
                 }
                 // head가 ListNode일 경우
                 else{
-                    //headItem = ((ListNode)runExpr(operand)).car();
+                    headItem = ((ListNode)runExpr(operand)).car();
                     //listNode일 경우 원래 안돼야함(?) 에러 처리 
-                    headItem = null;
                 }
 
                 if (headItem instanceof ListNode)   // 첫번째 원소가 리스트일 경우 Quote를 붙여 반환
