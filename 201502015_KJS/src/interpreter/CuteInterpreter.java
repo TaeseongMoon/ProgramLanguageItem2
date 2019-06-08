@@ -169,6 +169,8 @@ public class CuteInterpreter {
                 BooleanNode bool;
                 if(operand.car() instanceof BooleanNode)        // BooleanNode일 경우
                     bool = (BooleanNode)operand.car();
+                else if(operand.car() instanceof IdNode)        // IdNode일 경우
+                    bool = (BooleanNode) lookupTable(operand.car().toString());
                 else
                     bool = (BooleanNode)runExpr(operand);      // BooleanNode가 아닐경우 runExpr로 BooleanNode 반환
                 if(bool.toString() == "#T")
