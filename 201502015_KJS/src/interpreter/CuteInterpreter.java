@@ -186,7 +186,9 @@ public class CuteInterpreter {
                     ListNode headCond = (ListNode) operand.car();   // 현재 조건문
                     ListNode TailCond = operand.cdr();              // 다음 조건문들
 
-                    if (headCond.car() instanceof BooleanNode)      // 첫번째 조건문에서 Boolean 값을 가져온다.
+                    if(headCond.car() instanceof IdNode) // IdNode일 경우, loockupTable에서 가져온다.
+                        condbool = (BooleanNode) lookupTable(headCond.car().toString());
+                    else if (headCond.car() instanceof BooleanNode)      // 첫번째 조건문에서 Boolean 값을 가져온다.
                         condbool = (BooleanNode) headCond.car();
                     else if (headCond.car() instanceof ListNode)    // 조건문이 연산식이라면 연산하여 결정
                         condbool = (BooleanNode) runExpr((ListNode) headCond.car());
@@ -195,7 +197,10 @@ public class CuteInterpreter {
                         if (condbool.toString() == "#T") {  // 조건문 결과 #T이면 출력값 결정
                             if (TailCond.car() instanceof ListNode)
                                 return runExpr(TailCond.car());   // 출력값이 ListNode이면 runExpr를 실행한 결과를 반환
-                            return TailCond.car();
+                            else if(TailCond.car()  instanceof IdNode)
+                                return lookupTable(TailCond.car().toString());  // 출력값이 IdNode이면 lookupTable
+                            else
+                                return TailCond.car();
                         }
                         return null;
                      }
@@ -203,17 +208,26 @@ public class CuteInterpreter {
                     if (condbool.toString() == "#T") {  // 조건문 결과 #T이면 출력값 결정
                         if(headCond.cdr().car() instanceof ListNode)
                             return runExpr(headCond.cdr().car());   // 출력값이 ListNode이면 runExpr를 실행한 결과를 반환
-                        return headCond.cdr().car();
+                        else if(headCond.cdr().car() instanceof IdNode)
+                            return lookupTable(headCond.cdr().car().toString());  // 출력값이 IdNode이면 lookupTable
+                        else
+                            return headCond.cdr().car();
                     }
                     else
                         return runFunction(operator, TailCond); // 다음 조건문으로 이동
                 }
-                else if(operand.car() instanceof BooleanNode){  // operand의 첫번째 원소가 ListNode가 아니므로, 다음 조건문이 없다.
-                    condbool = (BooleanNode) operand.car();
+                else {  // operand의 첫번째 원소가 ListNode가 아니므로, 다음 조건문이 없다.
+                    if(operand.car() instanceof IdNode) // IdNode일 경우, loockupTable에서 가져온다.
+                        condbool = (BooleanNode) lookupTable(operand.car().toString());
+                    else
+                        condbool = (BooleanNode) operand.car();
                     if (condbool.toString() == "#T") {  // 조건문 결과 #T이면 출력값 결정
                         if(operand.cdr().car() instanceof ListNode)
                             return runExpr(operand.cdr().car());   // 출력값이 ListNode이면 runExpr를 실행한 결과를 반환
-                        return operand.cdr().car();
+                        else if(operand.cdr().car() instanceof IdNode)
+                            return lookupTable(operand.cdr().car().toString());  // 출력값이 IdNode이면 lookupTable
+                        else
+                            return operand.cdr().car();
                     }
                     return null;
                 }
