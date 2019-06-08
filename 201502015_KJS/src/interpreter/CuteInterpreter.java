@@ -131,7 +131,17 @@ public class CuteInterpreter {
                 else
                     return BooleanNode.FALSE_NODE;  // 그 외에는 모두 #F
             case ATOM_Q:
-                Node atom = runQuote(operand);          // quote를 벗긴다.
+                Node atom;
+                if(operand.car() instanceof IdNode) {// IdNode일 경우 loockupTable해서 변수를 불러온다.
+                    if(lookupTable(operand.car().toString()) instanceof ListNode) // 변수를 가져온다.
+                        operand = (ListNode)lookupTable(operand.car().toString());
+                    else
+                        return BooleanNode.TRUE_NODE;   // 가져온 변수가 ListNode가 아니면 atom이다.
+                }
+                if(operand.car() instanceof QuoteNode)  // operand는 ListNode이다.
+                    atom = runQuote(operand);          // quote를 벗긴다.
+                else
+                    return BooleanNode.TRUE_NODE;
                 if(atom instanceof ValueNode)           // ListNode가 아니다. ValueNode이다.
                     return BooleanNode.TRUE_NODE;
                 else if(atom instanceof ListNode && atom == ListNode.EMPTYLIST)     // null list은 atom 으로 취급된다.
