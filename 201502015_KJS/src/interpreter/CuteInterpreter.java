@@ -104,9 +104,10 @@ public class CuteInterpreter {
                     listnode = (ListNode) runQuote(operand);    // quoteNode에서 quote를 땐 nodelist를 가져온다.
                     tailItem = listnode.cdr();          // 맨 처음 원소를 제외한 나머지 원소들
                 }
-                // head가 ListNode일 경우
+                // head가 FunctionNode일 경우, 즉 operand가 리스트가 아닌 경우
                 else {
-                    tailItem = ((ListNode)runExpr(operand)).cdr();
+                    tailItem = ((QuoteNode)runExpr(operand)).nodeInside();  // runExpr 결과 QuoteNode가 반환되므로, ListNode를 꺼내옴
+                    tailItem = ((ListNode)tailItem).cdr();
                 }
                 if (tailItem instanceof ListNode)
                     return (new QuoteNode(tailItem));
