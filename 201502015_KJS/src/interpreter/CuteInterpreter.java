@@ -138,7 +138,11 @@ public class CuteInterpreter {
             case NULL_Q:
                 if(operand.car() instanceof IdNode)   // IdNode일 경우 loockupTable해서 변수를 불러온다.
                     operand = (ListNode) lookupTable(operand.car().toString());
-                listnode = (ListNode)runQuote(operand);  // quoteNode에서 quote를 땐 nodelist를 가져온다.
+                if(operand.car() instanceof QuoteNode)
+                    listnode = (ListNode)runQuote(operand);  // quoteNode에서 quote를 땐 nodelist를 가져온다.
+                else
+                    listnode = (ListNode) ((QuoteNode)runExpr(operand)).nodeInside();
+
                 if(listnode == ListNode.EMPTYLIST)  // EMPTY LIST 이면 #T를 반환한다.
                     return BooleanNode.TRUE_NODE;
                 else
