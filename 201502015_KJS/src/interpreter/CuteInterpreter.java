@@ -114,15 +114,26 @@ public class CuteInterpreter {
                 return tailItem;   // 그냥 ValueNode일 경우는 그냥 반환
             case CONS:
                 Node head = operand.car();
-                if(head instanceof IdNode)          // IdNode일 경우 loockupTable해서 변수를 불러온다.
+                if(head instanceof IdNode) {          // IdNode일 경우 loockupTable해서 변수를 불러온다.
                     head = lookupTable(head.toString());
-                if(head instanceof ListNode)       // ListNode -> QuoteNode
-                    head = runQuote((ListNode)head);   // Quote일 것이므로 벗겨준다.
+                }
+                if(head instanceof ListNode) {
+                    if(! (((ListNode) head).car() instanceof QuoteNode)) // ListNode이면서 QuoteNode가 아니라면
+                        head = runExpr(head);   // QuoteNode가 아니라면 runExpr 결과를 반환해준다.
+                    if(head instanceof QuoteNode) {
+                        head = ((QuoteNode) head).nodeInside();   // Quote일 것이므로 벗겨준다.
+                    }
+                }
                 Node tail = operand.cdr().car();
                 if(tail instanceof IdNode)          // IdNode일 경우 loockupTable해서 변수를 불러온다.
                     tail = lookupTable(tail.toString());
-                if(tail instanceof ListNode)       // ListNode -> QuoteNode
-                    tail = runQuote((ListNode)tail);   // Quote일 것이므로 벗겨준다.
+                if(tail instanceof ListNode) {
+                    if(! (((ListNode) tail).car() instanceof QuoteNode))     // ListNode이면서 QuoteNode가 아니라면
+                        tail = runExpr(tail);    // QuoteNode가 아니라면 runExpr 결과를 반환해준다.
+                    if(tail instanceof QuoteNode) {
+                        tail = ((QuoteNode) tail).nodeInside();   // Quote일 것이므로 벗겨준다.
+                    }
+                }
                 return  new QuoteNode(ListNode.cons(head, (ListNode) tail));   // cons로 합치고 다시 quote를 씌워준다.
             case NULL_Q:
                 if(operand.car() instanceof IdNode)   // IdNode일 경우 loockupTable해서 변수를 불러온다.
