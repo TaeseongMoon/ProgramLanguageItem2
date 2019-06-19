@@ -354,7 +354,7 @@ public class CuteInterpreter {
     // lambda의 formal parameter에 actual parameter를 바인딩해줍니다.
     private Node runLambda(ListNode operand, ListNode actual_para){
         ListNode formal_para = (ListNode) operand.car();    // formal parameter 를 가져옵니다.
-        ListNode FuncBody = (ListNode) operand.cdr().car(); // 함수 몸체(body)를 가져옵니다.
+        ListNode FuncBody = (ListNode) operand.cdr(); // 함수 몸체(body)를 가져옵니다.
         Node value;
 
         HashMap<String, Node> prevTable = new HashMap<String, Node>();  // lambda 인자 바인딩을 위한 임시 table 저장소입니다.
@@ -368,10 +368,14 @@ public class CuteInterpreter {
             actual_para = actual_para.cdr();
         }
 
-        Node result = runExpr(FuncBody);    // 함수 몸체를 runExpr합니다.
+        Node result = null;
+        while (FuncBody.car() != null) {
+            result = runExpr(FuncBody.car());    // 함수 몸체를 하나씩 runExpr합니다.
+            FuncBody = FuncBody.cdr();
+        }
         deepCopyPrevTable(prevTable);       // lambda가 끝났으니, 이전 table로 돌려줍니다.
 
-        return result;
+        return result;  // 함수의 실행결과는 마지막 runExpr로 반환됩니다.
     }
 
     // Quote 노드에서 node 값을 때준다.
