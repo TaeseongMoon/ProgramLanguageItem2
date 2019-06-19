@@ -45,7 +45,7 @@ public class CuteInterpreter {
             Node var = lookupTable(rootExpr.toString());
             if(var == null)
                 throw new UndefinedException(rootExpr.toString());
-            return lookupTable(rootExpr.toString());    // IdNode
+            return var;    // IdNode
         }
         else if(rootExpr instanceof IntNode)
             return rootExpr;
@@ -163,7 +163,10 @@ public class CuteInterpreter {
                 else
                     return BooleanNode.FALSE_NODE;  // 그 외에는 모두 #F
             case ATOM_Q:
-                Node atom;
+                Node atom = null;
+                if(runExpr(operand) instanceof QuoteNode)  // 쿼트노드가 나오면 List로 씌어서 넣어준다.
+                    operand = ListNode.cons(runExpr(operand), ListNode.EMPTYLIST);
+
                 if(operand.car() instanceof IdNode) {// IdNode일 경우 runExpr로 loockupTable해서 변수를 불러온다.
                     if(runExpr(operand.car()) instanceof ListNode) // 변수를 가져온다.
                         operand = (ListNode)runExpr(operand.car());
@@ -174,6 +177,7 @@ public class CuteInterpreter {
                     atom = runQuote(operand);          // quote를 벗긴다.
                 else
                     return BooleanNode.TRUE_NODE;
+
                 if(atom instanceof ValueNode)           // ListNode가 아니다. ValueNode이다.
                     return BooleanNode.TRUE_NODE;
                 else if(atom instanceof ListNode && atom == ListNode.EMPTYLIST)     // null list은 atom 으로 취급된다.
