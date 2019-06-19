@@ -183,15 +183,22 @@ public class CuteInterpreter {
             case EQ_Q:
                 // 두 노드의 값이 같은지 확인한다.
                 //List안의 값이 같아도 다른 객체를 참조하므로 F를 출력한다.
-                Node firstNode = operand.car();
-                Node secondNode = operand.cdr().car();
+                Node firstNode = runExpr(operand.car());    // runExpr를 통한 최종 결과값을 반환받는다.
+                Node secondNode = runExpr(operand.cdr().car());
                 // 먼저 Table에 define되있는지 확인한다.
                 if(firstNode instanceof IdNode)
                     firstNode = runExpr(firstNode);
                 if(secondNode instanceof IdNode)
                     secondNode = runExpr(secondNode);
-                firstNode = runQuote((ListNode)firstNode);
-                secondNode = runQuote((ListNode)secondNode);
+
+                if(firstNode instanceof ListNode)
+                    firstNode = runQuote((ListNode)firstNode);
+                else
+                    firstNode = ((QuoteNode)firstNode).nodeInside();
+                if(secondNode instanceof ListNode)
+                    secondNode = runQuote((ListNode)secondNode);
+                else
+                    secondNode = ((QuoteNode)secondNode).nodeInside();
 
                 if(firstNode.equals(secondNode))
                     return BooleanNode.TRUE_NODE;
