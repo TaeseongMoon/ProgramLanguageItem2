@@ -296,17 +296,9 @@ public class CuteInterpreter {
         Node A = operand.car();
         Node B = operand.cdr().car();
 
-        // 피연산자가 IdNode일 경우, lookupTable로 정의된 변수가 있는지 확인
-        if(A instanceof IdNode)
-            A = lookupTable(A.toString());
-        if(B instanceof IdNode)
-            B = lookupTable(B.toString());
-
-        // 피연산자들이 리스트 노드일 경우 runBinary를 통해 결과 Node로 바꿔준다.
-        if(A instanceof ListNode)
-            A = runBinary((ListNode)A);
-        if(B instanceof ListNode)
-            B = runBinary((ListNode)B);
+        // 피연산자들을 runExpr를 통해 계산가능한 값인 최종 Node로 바꿔준다.
+        A = runExpr(A);
+        B = runExpr(B);
 
         int var_a = ((IntNode) A).getValue().intValue();
         int var_b = ((IntNode) B).getValue().intValue();
@@ -368,7 +360,7 @@ public class CuteInterpreter {
         HashMap<String, Node> prevTable = new HashMap<String, Node>();  // lambda 인자 바인딩을 위한 임시 table 저장소입니다.
         deepCopyTable(prevTable);   // prevTable에 table값의 값을 백업
         while(formal_para.car() != null){
-            insertTable(formal_para.car().toString(), actual_para.car());   // formal <- actual 바인딩
+            insertTable(formal_para.car().toString(), runExpr(actual_para.car()));   // formal <- actual 바인딩
             formal_para = formal_para.cdr();
             actual_para = actual_para.cdr();
         }
