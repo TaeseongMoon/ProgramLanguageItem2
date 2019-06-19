@@ -4,6 +4,7 @@ import parser.parse.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CuteInterpreter {
     HashMap<String, Node> table;
@@ -55,11 +56,20 @@ public class CuteInterpreter {
     private Node runList(ListNode list){
         if(list.equals(ListNode.EMPTYLIST))
             return list;
+        if(list.car() instanceof IdNode) {  // 첫번째가 id노드라면 table에서 lookup해와서 교체해준다.
+            list = ListNode.cons(lookupTable(list.car().toString()), list.cdr());
+        }
         if(list.car() instanceof FunctionNode){
             return runFunction((FunctionNode) list.car(), (ListNode) stripList(list.cdr()));
         }
         if(list.car() instanceof BinaryOpNode){
             return runBinary(list);
+        }
+        // List의 첫번째가 FuncionNode나 BinaryOpNode가 아니라 List이면 lamdbaExpression인지 검사해본다.
+        if(list.car() instanceof ListNode && ((ListNode) list.car()).car() instanceof FunctionNode){
+            FunctionNode operand = (FunctionNode) ((ListNode) list.car()).car();   // operand 추출
+            if(operand.funcType == FunctionNode.FunctionType.LAMBDA)    // operand가 lambda이다.
+                return runLambda((ListNode) ((ListNode) list.car()).cdr(), list.cdr());
         }
         return list;
     }
@@ -260,7 +270,8 @@ public class CuteInterpreter {
                     value = lookupTable(value.toString());
                 insertTable(variable.toString(), value);    // id = value 를 테이블에 넣습니다.
                 return  null;
-            case LAMBDA:
+            case LAMBDA:    // LAMBDA가 runLambda가 아니라 runFunction에서 실행되면 인자가 없다는 것이므로, 돌려준다.
+                return ListNode.cons(operator, operand);
             default:
                 break;
         }
@@ -330,6 +341,42 @@ public class CuteInterpreter {
                 break;
         }
         return null;
+    }
+
+    /*
+     Deep Copy HashMap, lambda 실행시 사용됩니다.
+     임시로 기존의 table을 prevTable에 복사해두고, lambda로 함수인자 x 등을 table에 binding합니다.
+     lambda가 끝난 후 다시 prevTable의 값을 table로 복사해줍니다.
+      */
+    private void deepCopyTable(HashMap<String, Node> prevTable){
+        for (HashMap.Entry<String, Node> copy : this.table.entrySet()) {
+            prevTable.put(copy.getKey(), copy.getValue());
+        }
+    }
+    private void deepCopyPrevTable(HashMap<String, Node> prevTable){
+        this.table.clear();
+        for (HashMap.Entry<String, Node> copy : prevTable.entrySet()) {
+            this.table.put(copy.getKey(), copy.getValue());
+        }
+    }
+
+    // lambda의 formal parameter에 actual parameter를 바인딩해줍니다.
+    private Node runLambda(ListNode operand, ListNode actual_para){
+        ListNode formal_para = (ListNode) operand.car();    // formal parameter 를 가져옵니다.
+        ListNode FuncBody = (ListNode) operand.cdr().car(); // 함수 몸체(body)를 가져옵니다.
+
+        HashMap<String, Node> prevTable = new HashMap<String, Node>();  // lambda 인자 바인딩을 위한 임시 table 저장소입니다.
+        deepCopyTable(prevTable);   // prevTable에 table값의 값을 백업
+        while(formal_para.car() != null){
+            insertTable(formal_para.car().toString(), actual_para.car());   // formal <- actual 바인딩
+            formal_para = formal_para.cdr();
+            actual_para = actual_para.cdr();
+        }
+
+        Node result = runExpr(FuncBody);    // 함수 몸체를 runExpr합니다.
+        deepCopyPrevTable(prevTable);       // lambda가 끝났으니, 이전 table로 돌려줍니다.
+
+        return result;
     }
 
     // Quote 노드에서 node 값을 때준다.
