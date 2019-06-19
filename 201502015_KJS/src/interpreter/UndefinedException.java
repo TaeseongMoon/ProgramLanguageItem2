@@ -2,6 +2,6 @@ package interpreter;
 
 public class UndefinedException extends Exception{
     public UndefinedException(String id){
-        super(id+" is undefined");
+        super("NameError: name '"+id+"' is not defined");
     }
 }
