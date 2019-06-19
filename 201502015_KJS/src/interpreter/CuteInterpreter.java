@@ -3,6 +3,7 @@ import parser.ast.*;
 import parser.parse.*;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -262,12 +263,10 @@ public class CuteInterpreter {
                 Node variable = operand.car();   // 변수 ID
                 if(!(variable instanceof IdNode))       // IdNode여야 한다. 사실 없어도 에러띄우면 되는 부분이긴 합니다.
                     return null;
-                Node value = operand.cdr().car();
-                // value에 해당되는 부분이 ListNode이면 runExpr를 한 결과를 반환합니다.
-                if(value instanceof ListNode )
-                    value = runExpr(value);
-                else if(value instanceof IdNode ) // Id가 value값이면 테이블에서 가져온다.
-                    value = lookupTable(value.toString());
+                Node value = runExpr(operand.cdr().car()); // runExpr를 한 결과를 반환합니다.
+
+                if(value instanceof QuoteNode)  // 쿼트노드가 나오면 List로 씌어서 넣어준다.
+                    value = ListNode.cons(value, ListNode.EMPTYLIST);
                 insertTable(variable.toString(), value);    // id = value 를 테이블에 넣습니다.
                 return  null;
             case LAMBDA:    // LAMBDA가 runLambda가 아니라 runFunction에서 실행되면 인자가 없다는 것이므로, 돌려준다.
@@ -356,11 +355,15 @@ public class CuteInterpreter {
     private Node runLambda(ListNode operand, ListNode actual_para){
         ListNode formal_para = (ListNode) operand.car();    // formal parameter 를 가져옵니다.
         ListNode FuncBody = (ListNode) operand.cdr().car(); // 함수 몸체(body)를 가져옵니다.
+        Node value;
 
         HashMap<String, Node> prevTable = new HashMap<String, Node>();  // lambda 인자 바인딩을 위한 임시 table 저장소입니다.
         deepCopyTable(prevTable);   // prevTable에 table값의 값을 백업
         while(formal_para.car() != null){
-            insertTable(formal_para.car().toString(), runExpr(actual_para.car()));   // formal <- actual 바인딩
+            value = runExpr(actual_para.car());
+            if(value instanceof QuoteNode)  // 쿼트노드가 나오면 List로 씌어서 넣어준다.
+                value = ListNode.cons(value, ListNode.EMPTYLIST);
+            insertTable(formal_para.car().toString(), value);   // formal <- actual 바인딩
             formal_para = formal_para.cdr();
             actual_para = actual_para.cdr();
         }
