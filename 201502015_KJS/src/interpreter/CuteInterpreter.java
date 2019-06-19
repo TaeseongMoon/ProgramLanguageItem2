@@ -14,7 +14,7 @@ public class CuteInterpreter {
         this.table = new HashMap<String, Node>();
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws UndefinedException {
         ClassLoader cloader = ParserMain.class.getClassLoader();
         CuteParser cuteParser = new CuteParser("( + 2 3 ) ");   // 테스트용
         CuteInterpreter interpreter = new CuteInterpreter();
@@ -24,7 +24,7 @@ public class CuteInterpreter {
         nodePrinter.prettyPrint();
     }
 
-    public String runCommand(String command){
+    public String runCommand(String command) throws UndefinedException {
         CuteParser cuteParser = new CuteParser(command);
         Node parseTree = cuteParser.parseExpr();
         Node resultNode = this.runExpr(parseTree);
@@ -37,12 +37,16 @@ public class CuteInterpreter {
         System.out.println(err);
     }
 
-    public Node runExpr(Node rootExpr){
+    public Node runExpr(Node rootExpr) throws UndefinedException {
         if(rootExpr == null){
             return null;
         }
-        if(rootExpr instanceof IdNode)
+        if(rootExpr instanceof IdNode) {
+            Node var = lookupTable(rootExpr.toString());
+            if(var == null)
+                throw new UndefinedException(rootExpr.toString());
             return lookupTable(rootExpr.toString());    // IdNode
+        }
         else if(rootExpr instanceof IntNode)
             return rootExpr;
         else if(rootExpr instanceof BooleanNode)
@@ -54,11 +58,11 @@ public class CuteInterpreter {
         return null;
     }
 
-    private Node runList(ListNode list){
+    private Node runList(ListNode list) throws UndefinedException {
         if(list.equals(ListNode.EMPTYLIST))
             return list;
         if(list.car() instanceof IdNode) {  // 첫번째가 id노드라면 table에서 lookup해와서 교체해준다.
-            list = ListNode.cons(lookupTable(list.car().toString()), list.cdr());
+            list = ListNode.cons(runExpr(list.car()), list.cdr());
         }
         if(list.car() instanceof FunctionNode){
             return runFunction((FunctionNode) list.car(), (ListNode) stripList(list.cdr()));
@@ -75,7 +79,7 @@ public class CuteInterpreter {
         return list;
     }
 
-    private Node runFunction(FunctionNode operator, ListNode operand){
+    private Node runFunction(FunctionNode operator, ListNode operand) throws UndefinedException {
         ListNode listnode;
         // 함수 동작
         switch (operator.funcType){
@@ -85,7 +89,7 @@ public class CuteInterpreter {
                 Node headItem;
                 //head가 IdNode일 경우
                 if(operand.car() instanceof IdNode){
-                    headItem = lookupTable(operand.car().toString());   // 테이블에서 해당 변수의 값을 가져온다.
+                    headItem = runExpr(operand.car());   // 테이블에서 해당 변수의 값을 가져온다.
                     return runFunction(operator, (ListNode)headItem);   // 가져온 해당 변수에 대해서 CAR을 실행한다.
                 }
                 //head가 QuoteNode일 경우
@@ -107,7 +111,7 @@ public class CuteInterpreter {
                 // CAR과 동일하지만 tail을 반환한다
                 //head가 IdNode일 경우
                 if(operand.car() instanceof IdNode){
-                    headItem = lookupTable(operand.car().toString());
+                    headItem = runExpr(operand.car());
                     return runFunction(operator, (ListNode)headItem);
                 }
                 // head가 QuoteNode일 경우
@@ -125,8 +129,8 @@ public class CuteInterpreter {
                 return tailItem;   // 그냥 ValueNode일 경우는 그냥 반환
             case CONS:
                 Node head = operand.car();
-                if(head instanceof IdNode) {          // IdNode일 경우 loockupTable해서 변수를 불러온다.
-                    head = lookupTable(head.toString());
+                if(head instanceof IdNode) {          // IdNode일 경우 runExpr로 loockupTable해서 변수를 불러온다.
+                    head = runExpr(head);
                 }
                 if(head instanceof ListNode) {
                     if(! (((ListNode) head).car() instanceof QuoteNode)) // ListNode이면서 QuoteNode가 아니라면
@@ -136,8 +140,8 @@ public class CuteInterpreter {
                     }
                 }
                 Node tail = operand.cdr().car();
-                if(tail instanceof IdNode)          // IdNode일 경우 loockupTable해서 변수를 불러온다.
-                    tail = lookupTable(tail.toString());
+                if(tail instanceof IdNode)          // IdNode일 경우 runExpr로 loockupTable해서 변수를 불러온다.
+                    tail = runExpr(tail);
                 if(tail instanceof ListNode) {
                     if(! (((ListNode) tail).car() instanceof QuoteNode))     // ListNode이면서 QuoteNode가 아니라면
                         tail = runExpr(tail);    // QuoteNode가 아니라면 runExpr 결과를 반환해준다.
@@ -147,8 +151,8 @@ public class CuteInterpreter {
                 }
                 return  new QuoteNode(ListNode.cons(head, (ListNode) tail));   // cons로 합치고 다시 quote를 씌워준다.
             case NULL_Q:
-                if(operand.car() instanceof IdNode)   // IdNode일 경우 loockupTable해서 변수를 불러온다.
-                    operand = (ListNode) lookupTable(operand.car().toString());
+                if(operand.car() instanceof IdNode)   // IdNode일 경우 runExpr로 loockupTable해서 변수를 불러온다.
+                    operand = (ListNode) runExpr(operand.car());
                 if(operand.car() instanceof QuoteNode)
                     listnode = (ListNode)runQuote(operand);  // quoteNode에서 quote를 땐 nodelist를 가져온다.
                 else
@@ -160,9 +164,9 @@ public class CuteInterpreter {
                     return BooleanNode.FALSE_NODE;  // 그 외에는 모두 #F
             case ATOM_Q:
                 Node atom;
-                if(operand.car() instanceof IdNode) {// IdNode일 경우 loockupTable해서 변수를 불러온다.
-                    if(lookupTable(operand.car().toString()) instanceof ListNode) // 변수를 가져온다.
-                        operand = (ListNode)lookupTable(operand.car().toString());
+                if(operand.car() instanceof IdNode) {// IdNode일 경우 runExpr로 loockupTable해서 변수를 불러온다.
+                    if(runExpr(operand.car()) instanceof ListNode) // 변수를 가져온다.
+                        operand = (ListNode)runExpr(operand.car());
                     else
                         return BooleanNode.TRUE_NODE;   // 가져온 변수가 ListNode가 아니면 atom이다.
                 }
@@ -183,9 +187,9 @@ public class CuteInterpreter {
                 Node secondNode = operand.cdr().car();
                 // 먼저 Table에 define되있는지 확인한다.
                 if(firstNode instanceof IdNode)
-                    firstNode = lookupTable(firstNode.toString());
+                    firstNode = runExpr(firstNode);
                 if(secondNode instanceof IdNode)
-                    secondNode = lookupTable(secondNode.toString());
+                    secondNode = runExpr(secondNode);
                 firstNode = runQuote((ListNode)firstNode);
                 secondNode = runQuote((ListNode)secondNode);
 
@@ -198,7 +202,7 @@ public class CuteInterpreter {
                 if(operand.car() instanceof BooleanNode)        // BooleanNode일 경우
                     bool = (BooleanNode)operand.car();
                 else if(operand.car() instanceof IdNode)        // IdNode일 경우
-                    bool = (BooleanNode) lookupTable(operand.car().toString());
+                    bool = (BooleanNode) runExpr(operand.car());
                 else
                     bool = (BooleanNode)runExpr(operand);      // BooleanNode가 아닐경우 runExpr로 BooleanNode 반환
                 if(bool.toString() == "#T")
@@ -214,8 +218,8 @@ public class CuteInterpreter {
                     ListNode headCond = (ListNode) operand.car();   // 현재 조건문
                     ListNode TailCond = operand.cdr();              // 다음 조건문들
 
-                    if(headCond.car() instanceof IdNode) // IdNode일 경우, loockupTable에서 가져온다.
-                        condbool = (BooleanNode) lookupTable(headCond.car().toString());
+                    if(headCond.car() instanceof IdNode) // IdNode일 경우, runExpr로 loockupTable에서 가져온다.
+                        condbool = (BooleanNode) runExpr(headCond.car());
                     else if (headCond.car() instanceof BooleanNode)      // 첫번째 조건문에서 Boolean 값을 가져온다.
                         condbool = (BooleanNode) headCond.car();
                     else if (headCond.car() instanceof ListNode)    // 조건문이 연산식이라면 연산하여 결정
@@ -226,7 +230,7 @@ public class CuteInterpreter {
                             if (TailCond.car() instanceof ListNode)
                                 return runExpr(TailCond.car());   // 출력값이 ListNode이면 runExpr를 실행한 결과를 반환
                             else if(TailCond.car()  instanceof IdNode)
-                                return lookupTable(TailCond.car().toString());  // 출력값이 IdNode이면 lookupTable
+                                return runExpr(TailCond.car());  // 출력값이 IdNode이면 runExpr로 lookupTable
                             else
                                 return TailCond.car();
                         }
@@ -237,7 +241,7 @@ public class CuteInterpreter {
                         if(headCond.cdr().car() instanceof ListNode)
                             return runExpr(headCond.cdr().car());   // 출력값이 ListNode이면 runExpr를 실행한 결과를 반환
                         else if(headCond.cdr().car() instanceof IdNode)
-                            return lookupTable(headCond.cdr().car().toString());  // 출력값이 IdNode이면 lookupTable
+                            return runExpr(headCond.cdr().car());  // 출력값이 IdNode이면 runExpr로 lookupTable
                         else
                             return headCond.cdr().car();
                     }
@@ -245,15 +249,15 @@ public class CuteInterpreter {
                         return runFunction(operator, TailCond); // 다음 조건문으로 이동
                 }
                 else {  // operand의 첫번째 원소가 ListNode가 아니므로, 다음 조건문이 없다.
-                    if(operand.car() instanceof IdNode) // IdNode일 경우, loockupTable에서 가져온다.
-                        condbool = (BooleanNode) lookupTable(operand.car().toString());
+                    if(operand.car() instanceof IdNode) // IdNode일 경우, runExpr로 loockupTable에서 가져온다.
+                        condbool = (BooleanNode) runExpr(operand.car());
                     else
                         condbool = (BooleanNode) operand.car();
                     if (condbool.toString() == "#T") {  // 조건문 결과 #T이면 출력값 결정
                         if(operand.cdr().car() instanceof ListNode)
                             return runExpr(operand.cdr().car());   // 출력값이 ListNode이면 runExpr를 실행한 결과를 반환
                         else if(operand.cdr().car() instanceof IdNode)
-                            return lookupTable(operand.cdr().car().toString());  // 출력값이 IdNode이면 lookupTable
+                            return runExpr(operand.cdr().car());  // 출력값이 IdNode이면 runExpr로 lookupTable
                         else
                             return operand.cdr().car();
                     }
@@ -287,7 +291,7 @@ public class CuteInterpreter {
         }
     }
 
-    private Node runBinary(ListNode list){
+    private Node runBinary(ListNode list) throws UndefinedException {
         BinaryOpNode operator = (BinaryOpNode) list.car();
         ListNode operand = list.cdr();
 
@@ -352,7 +356,7 @@ public class CuteInterpreter {
     }
 
     // lambda의 formal parameter에 actual parameter를 바인딩해줍니다.
-    private Node runLambda(ListNode operand, ListNode actual_para){
+    private Node runLambda(ListNode operand, ListNode actual_para) throws UndefinedException {
         ListNode formal_para = (ListNode) operand.car();    // formal parameter 를 가져옵니다.
         ListNode FuncBody = (ListNode) operand.cdr(); // 함수 몸체(body)를 가져옵니다.
         Node value;
